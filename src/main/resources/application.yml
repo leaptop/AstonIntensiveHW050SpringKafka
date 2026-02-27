@@ -1,23 +1,65 @@
-spring:
-  application:
-    name: user-service
+spring: # Корневой раздел конфигурации Spring Framework
+  application: # Настройки имени приложения
+    name: notification-service # Имя микросервиса, используется для идентификации в логах и
+    #Discovery Service (если есть)
 
-  datasource:
-    url: jdbc:postgresql://localhost:5432/user_service_db
-    username: user_service_user
-    password: StrongPassword_123
+  # ========== НАСТРОЙКИ KAFKA ==========
+  kafka: # Конфигурация Apache Kafka
+    bootstrap-servers: localhost:9092 # Адрес Kafka брокера (сервера).
+    # localhost:9092 - означает, что Kafka запущена локально на стандартном порту
+    # Если Kafka в Docker, но приложение на хосте - localhost работает, если порт проброшен
 
-  jpa:
-    database-platform: org.hibernate.dialect.PostgreSQLDialect   #Эта строка вроде как позволяет приложению
-    #запускаться даже если БД не работает
-    hibernate:
-      ddl-auto: update          # Создаёт/обновляет таблицы автоматически (только для dev!)
-    show-sql: true              # Выводит SQL-запросы в консоль (удобно для отладки)
-    properties:
-      hibernate:
-        format_sql: true
+    consumer: # Настройки потребителя (consumer) - того, кто читает сообщения из Kafka
+      group-id: notification-group # ID группы потребителей.
+      # Все потребители с одинаковым group-id распределяют сообщения между собой
+      # Важно: разные микросервисы должны иметь РАЗНЫЕ group-id
 
-logging:
-  level:
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+      auto-offset-reset: earliest # Что делать, если нет сохраненного смещения (offset):
+      # earliest - начать читать с самого первого сообщения в топике
+      # latest - начать читать только новые сообщения (пропустить старые)
+      # none - выбросить ошибку, если нет смещения
+
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer # Как преобразовывать
+      #ключ сообщения из байтов в объект
+      # StringDeserializer - ключ будет строкой (обычно используется для идентификаторов)
+
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer # Как преобразовывать
+      #тело сообщения
+      # JsonDeserializer - тело сообщения будет преобразовано из JSON в Java объект
+
+      properties: # Дополнительные свойства Kafka
+        spring.json.trusted.packages: '*' # Разрешить десериализацию JSON из любых пакетов
+        # Безопасность: '*' означает доверять всем пакетам (для production лучше указать конкретные: "com.alekseev.*")
+
+  # ========== НАСТРОЙКИ EMAIL ==========
+  mail: # Конфигурация отправки email
+    host: smtp.yandex.ru # ⚠️ ОШИБКА! Здесь должен быть SMTP сервер, а не email адрес!
+    # Правильно: smtp.gmail.com (для Gmail), smtp.yandex.ru (для Яндекса), smtp.mail.ru (для Mail.ru)
+    # Неправильно: указан email адрес вместо хоста SMTP сервера
+
+    port: 587 # Порт SMTP сервера:
+    # 587 - стандартный порт с TLS шифрованием (рекомендуется)
+    # 465 - альтернативный порт с SSL
+    # 25 - старый порт, часто блокируется провайдерами
+
+    username: stepan-alekseev-87@yandex.ru # Логин для авторизации на SMTP сервере
+    # Для Gmail - полный email адрес
+    # Важно: ЗАМЕНИТЕ на реальный email перед использованием!
+
+    password: Bipki3daiteq # Пароль для авторизации на SMTP сервере
+    # Для Gmail с двухфакторной аутентификацией нужно использовать "пароль приложения"
+    # ⚠️ НИКОГДА не коммитьте реальные пароли в Git!
+
+    properties: # Дополнительные свойства JavaMail
+      mail:
+        smtp: # Настройки SMTP протокола
+          auth: true # Включить аутентификацию (требуется для большинства SMTP серверов)
+          starttls:
+            enable: true # Включить шифрование STARTTLS (повышает безопасность)
+            # STARTTLS - шифрует соединение после установки
+
+# ========== НАСТРОЙКИ ВЕБ-СЕРВЕРА ==========
+server: # Настройки встроенного веб-сервера Tomcat/Jetty/Undertow
+  port: 8081 # Порт, на котором будет работать приложение
+  # 8081 - отличается от user-service (который на 8080)
+  # Важно: порты должны быть разными, чтобы сервисы не конфликтовали
