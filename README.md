@@ -11,3 +11,8 @@
 Также отдельно добавить API, которая будет отправлять сообщение на почту(почти тот же функционал, 
 что и через кафку).
 Написать интеграционные тесты для проверки отправки сообщения на почту.
+
+Запуск:
+1. docker-compose up -d запускает контейнеры: postgreSQL; kafka; zookeeper
+2. Запуск user-service https://github.com/leaptop/AstonIntensiveHW040SpringPostgreSQL
+3. Запуск этого приложения - notification-service
