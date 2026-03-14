@@ -1,61 +1,10 @@
-spring: # Корневой раздел конфигурации Spring Framework
-  application: # Настройки имени приложения
-    name: notification-service # Имя микросервиса, используется для идентификации в логах и
-    #Discovery Service (если есть)
+spring:
+  application:
+    name: notification-service
 
-  # ========== НАСТРОЙКИ KAFKA ==========
-  kafka: # Конфигурация Apache Kafka
-    bootstrap-servers: localhost:9092 # Адрес Kafka брокера (сервера).
-    # Если Kafka в Docker, но приложение на хосте - localhost работает, если порт проброшен
+server:
+  port: 8081
 
-    consumer: # Настройки потребителя (consumer) - того, кто читает сообщения из Kafka
-      group-id: notification-group # ID группы потребителей.
-      # Все потребители с одинаковым group-id распределяют сообщения между собой
-      # Важно: разные микросервисы должны иметь РАЗНЫЕ group-id
-
-      auto-offset-reset: earliest # Что делать, если нет сохраненного смещения (offset):
-      # earliest - начать читать с самого первого сообщения в топике
-      # latest - начать читать только новые сообщения (пропустить старые)
-      # none - выбросить ошибку, если нет смещения
-
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer # Как преобразовывать
-      #ключ сообщения из байтов в объект
-      # StringDeserializer - ключ будет строкой (обычно используется для идентификаторов)
-
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer # Как преобразовывать
-      #тело сообщения
-      # JsonDeserializer - тело сообщения будет преобразовано из JSON в Java объект
-
-      properties: # Дополнительные свойства Kafka
-        spring.json.trusted.packages: '*' # Разрешить десериализацию JSON из любых пакетов
-        # Безопасность: '*' означает доверять всем пакетам (для production лучше указать конкретные: "com.alekseev.*")
-
-  # ========== НАСТРОЙКИ EMAIL ==========
-  mail: # Конфигурация отправки email
-    host: smtp.gmail.com # Специальная штука для отправки сообщений по SMTP
-
-    port: 587 # Порт SMTP сервера:
-    # 587 - стандартный порт с TLS шифрованием (рекомендуется)
-    # 465 - альтернативный порт с SSL
-    # 25 - старый порт, часто блокируется провайдерами
-
-    username: *****@gmail.com # Логин для авторизации на SMTP сервере
-
-    password: ******* # Пароль для авторизации на SMTP сервере
-
-    protocol: smtp
-
-    properties: # Дополнительные свойства JavaMail
-      mail:
-        smtp: # Настройки SMTP протокола
-          auth: true # Включить аутентификацию (требуется для большинства SMTP серверов)
-          starttls:
-            enable: true # Включить шифрование STARTTLS (повышает безопасность)
-            # STARTTLS - шифрует соединение после установки
-          connectiontimeout: 5000
-          timeout: 5000
-          writetimeout: 5000
-
-# ========== НАСТРОЙКИ ВЕБ-СЕРВЕРА ==========
-server: # Настройки встроенного веб-сервера Tomcat/Jetty/Undertow
-  port: 8081 # Порт, на котором будет работать приложение
+logging:
+  level:
+    com.alekseev.notificationservice: DEBUG
